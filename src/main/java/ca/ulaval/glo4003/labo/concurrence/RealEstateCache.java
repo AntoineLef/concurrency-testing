@@ -5,6 +5,8 @@ import java.util.Map;
 
 public class RealEstateCache {
 
+	private Object lock = new Object();
+
 	private Map<String, RealEstate> realEstates = new HashMap<>();
 	private RealEstateRepository realEstateRepository;
 
@@ -15,8 +17,13 @@ public class RealEstateCache {
 	public RealEstate getRealEstate(String id) {
 		RealEstate realEstate = realEstates.get(id);
 		if (realEstate == null) {
-			realEstate = realEstateRepository.findById(id);
-			realEstates.put(id, realEstate);
+			synchronized (lock) {
+				realEstate = realEstates.get(id);
+				if (realEstate == null) {
+					realEstate = realEstateRepository.findById(id);
+					realEstates.put(id, realEstate);
+				}
+			}
 		}
 		return realEstate;
 	}

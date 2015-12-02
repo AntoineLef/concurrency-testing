@@ -1,15 +1,20 @@
 package ca.ulaval.glo4003.labo.concurrence;
 
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import edu.umd.cs.mtc.MultithreadedTestCase;
+import edu.umd.cs.mtc.TestFramework;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RealEstateCacheTest {
@@ -25,9 +30,8 @@ public class RealEstateCacheTest {
 	@Before
 	public void setUp() {
 		realEstateCache = new RealEstateCache(realEstateRepository);
-		BDDMockito.given(realEstateRepository.findById(REAL_ESTATE_ID))
-				.willReturn(realEstate);
-
+		given(realEstateRepository.findById(REAL_ESTATE_ID)).willReturn(
+				realEstate);
 	}
 
 	@Test
@@ -41,8 +45,7 @@ public class RealEstateCacheTest {
 
 		// then
 		Mockito.verify(realEstateRepository, times(1)).findById(REAL_ESTATE_ID);
-		assertThat(realEstateFromCache,
-				org.hamcrest.CoreMatchers.is(realEstate));
+		assertThat(realEstateFromCache, is(realEstate));
 	}
 
 	@Test
@@ -57,7 +60,51 @@ public class RealEstateCacheTest {
 
 		// then
 		Mockito.verify(realEstateRepository, times(1)).findById(REAL_ESTATE_ID);
-		assertThat(realEstateFromCache,
-				org.hamcrest.CoreMatchers.is(realEstate));
+		assertThat(realEstateFromCache, is(realEstate));
+	}
+
+	@Test
+	public void givenThreeThreadsAtTheSameTime_whenGetRealEstate_thenFetchOneTimeInRepository()
+			throws Throwable {
+		TestFramework
+				.runManyTimes(
+						new GivenThreeThreadsAtTheSameTime_whenGetRealEstate_thenFetchOneTimeInRepository(),
+						50);
+	}
+
+	class GivenThreeThreadsAtTheSameTime_whenGetRealEstate_thenFetchOneTimeInRepository
+			extends MultithreadedTestCase {
+		@Override
+		public void initialize() {
+			realEstateCache = new RealEstateCache(realEstateRepository);
+			reset(realEstateRepository);
+			given(realEstateRepository.findById(REAL_ESTATE_ID)).willReturn(
+					realEstate);
+		}
+
+		public void thread1() {
+			getRealEstate();
+		}
+
+		public void thread2() {
+			getRealEstate();
+		}
+
+		public void thread3() {
+			getRealEstate();
+		}
+
+		private void getRealEstate() {
+			waitForTick(1);
+			RealEstate realEstateInCache = realEstateCache
+					.getRealEstate(REAL_ESTATE_ID);
+
+			assertThat(realEstateInCache, is(realEstate));
+		}
+
+		@Override
+		public void finish() {
+			verify(realEstateRepository, times(1)).findById(anyString());
+		}
 	}
 }
