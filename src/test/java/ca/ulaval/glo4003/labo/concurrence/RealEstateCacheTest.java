@@ -19,6 +19,7 @@ import edu.umd.cs.mtc.TestFramework;
 @RunWith(MockitoJUnitRunner.class)
 public class RealEstateCacheTest {
 	private static final String REAL_ESTATE_ID = "uLaval";
+	private static final int REFRESH_RATE = 20;
 
 	@Mock
 	private RealEstateRepository realEstateRepository;
@@ -29,7 +30,8 @@ public class RealEstateCacheTest {
 
 	@Before
 	public void setUp() {
-		realEstateCache = new RealEstateCache(realEstateRepository);
+		realEstateCache = new RealEstateCache(realEstateRepository,
+				REFRESH_RATE);
 		given(realEstateRepository.findById(REAL_ESTATE_ID)).willReturn(
 				realEstate);
 	}
@@ -69,14 +71,15 @@ public class RealEstateCacheTest {
 		TestFramework
 				.runManyTimes(
 						new GivenThreeThreadsAtTheSameTime_whenGetRealEstate_thenFetchOneTimeInRepository(),
-						50);
+						200);
 	}
 
 	class GivenThreeThreadsAtTheSameTime_whenGetRealEstate_thenFetchOneTimeInRepository
 			extends MultithreadedTestCase {
 		@Override
 		public void initialize() {
-			realEstateCache = new RealEstateCache(realEstateRepository);
+			realEstateCache = new RealEstateCache(realEstateRepository,
+					REFRESH_RATE);
 			reset(realEstateRepository);
 			given(realEstateRepository.findById(REAL_ESTATE_ID)).willReturn(
 					realEstate);
@@ -104,7 +107,7 @@ public class RealEstateCacheTest {
 
 		@Override
 		public void finish() {
-			verify(realEstateRepository, times(1)).findById(anyString());
+			verify(realEstateRepository, atMost(2)).findById(anyString());
 		}
 	}
 }
