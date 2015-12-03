@@ -29,11 +29,19 @@ public class RealEstateCache {
 			synchronized (lock) {
 				realEstate = realEstates.get(id);
 				if (realEstate == null) {
+					System.out.println(Thread.currentThread().getName()
+							+ " Feeding cache");
 					realEstate = realEstateRepository.findById(id);
 					realEstates.put(id, realEstate);
+					return realEstate;
 				}
+				System.out.println(Thread.currentThread().getName()
+						+ " Cache already feed");
+				return realEstate;
 			}
 		}
+		System.out
+				.println(Thread.currentThread().getName() + " Found in cache");
 		return realEstate;
 	}
 
