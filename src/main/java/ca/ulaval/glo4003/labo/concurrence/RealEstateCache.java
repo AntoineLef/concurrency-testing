@@ -11,7 +11,7 @@ public class RealEstateCache {
 	private Object lock = new Object();
 	private int refreshRateInMs;
 
-	protected Map<String, RealEstate> realEstates = new HashMap<>();
+	private Map<String, RealEstate> realEstates = new HashMap<>();
 	private RealEstateRepository realEstateRepository;
 	private ScheduledExecutorService executor;
 
