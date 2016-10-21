@@ -6,11 +6,11 @@ import static org.mockito.BDDMockito.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
@@ -32,32 +32,13 @@ public class RealEstateCacheTest {
   @Before
   public void setUp() {
     realEstateCache = new RealEstateCache(realEstateRepository, REFRESH_RATE);
+    realEstateCache.start();
     given(realEstateRepository.findById(REAL_ESTATE_ID)).willReturn(realEstate);
   }
 
-  @Test
-  public void givenRealEstateNotInCache_whenFindById_thenFetchInRepository() throws Exception {
-    // given
-
-    // when
-    RealEstate realEstateFromCache = realEstateCache.getRealEstate(REAL_ESTATE_ID);
-
-    // then
-    Mockito.verify(realEstateRepository, times(1)).findById(REAL_ESTATE_ID);
-    assertThat(realEstateFromCache, is(realEstate));
-  }
-
-  @Test
-  public void givenRealEstateInCache_whenFindById_thenUseCache() throws Exception {
-    // given
-    realEstateCache.getRealEstate(REAL_ESTATE_ID);
-
-    // when
-    RealEstate realEstateFromCache = realEstateCache.getRealEstate(REAL_ESTATE_ID);
-
-    // then
-    Mockito.verify(realEstateRepository, times(1)).findById(REAL_ESTATE_ID);
-    assertThat(realEstateFromCache, is(realEstate));
+  @After
+  public void tearDown() {
+    realEstateCache.stop();
   }
 
   @Test
@@ -76,8 +57,6 @@ public class RealEstateCacheTest {
     public void initialize() {
       reset(realEstateRepository);
       given(realEstateRepository.findById(REAL_ESTATE_ID)).willReturn(realEstate);
-      realEstateCache = new RealEstateCache(realEstateRepository, REFRESH_RATE);
-      realEstateCache.start();
       System.out.println("------");
     }
 
@@ -93,6 +72,14 @@ public class RealEstateCacheTest {
       getRealEstate();
     }
 
+    public void thread4() {
+      getRealEstate();
+    }
+
+    public void thread5() {
+      getRealEstate();
+    }
+
     private void getRealEstate() {
       waitForTick(1);
       System.out.println(Thread.currentThread().getName() + " Getting real estate");
@@ -103,7 +90,6 @@ public class RealEstateCacheTest {
 
     @Override
     public void finish() {
-      realEstateCache.stop();
       verify(realEstateRepository, atMost(1)).findById(anyString());
     }
   }
